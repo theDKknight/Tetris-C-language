@@ -1,0 +1,213 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <windows.h>
+#include <conio.h>
+#define Width 8     //修改宽度，需要同时修改其他数据；
+#define Height 16   //高度可以直接修改；
+#define Blank (1<<Width+1)+1
+#define Full (1<<Width+2)-1
+
+unsigned int shape[28][4]={
+    {12, 12, 0, 0},{12, 12, 0, 0},{12, 12, 0, 0},{12, 12, 0, 0},
+    {15, 0, 0, 0},{8, 8, 8, 8},{15, 0, 0, 0},{8, 8, 8, 8},
+    {8, 12, 4, 0},{6, 12, 0, 0},{8, 12, 4, 0},{6, 12, 0, 0},
+    {4, 12, 8, 0},{12, 6, 0, 0},{4, 12, 8, 0},{12, 6, 0, 0},
+    {8, 8, 12, 0},{14, 8, 0, 0},{12, 4, 4, 0},{2, 14, 0, 0},
+    {4, 4, 12, 0},{8, 14, 0, 0},{12, 8, 8, 0},{14, 2, 0, 0},
+    {14, 4, 0, 0},{4, 12, 4, 0},{4, 14, 0, 0},{8, 12, 8, 0}
+};
+int num;
+int line[Height+2];
+char map[Width * Height]={0};
+int x=0;
+int y=0;
+unsigned int score=0;
+_Bool gameover=1;
+
+
+void initial_line(int a[],int n)
+{
+    int i;
+    for(i=0;i<n-1;++i)
+    {
+        line[i]=Blank;
+    }
+    line[n-1]=Full;
+}
+
+void initial_xyn(void)
+{
+    x=0;
+    y=0;
+    num=rand()%28;
+}
+
+void fill_map(_Bool b)
+{
+    char *p;
+    p=map+(x+2)+y*Width;
+    int i,j;
+    for(i=0;i<4;++i)
+    {
+        for(j=0;j<4;++j)
+        {
+            if (shape[num][i]<<j & 8) *p=b;
+            ++p;
+        }
+        p+=Width-4;
+    }
+    p=NULL;
+}
+
+int seek_copy(void)
+{
+    int i,j,k;
+    for(i=Height;i>=0;--i)
+    {
+        if(line[i]!=Blank && line[i]!=Full)
+        {
+            continue;
+        }
+        else if(line[i]==Blank)
+        {
+            return 0;
+        }
+        else if(line[i]==Full)
+        {
+            ++score;
+            break;
+        }
+    }
+
+    for(j=i;i>0;--i)
+    {
+        if(line[i-1]!=Blank && line[i-1]!=Full)
+        {
+            line[j]=line[i-1];      //复制位模式；
+            for(k=0;k<Width;++k)
+                map[(j-1)*Width+k]=map[(i-2)*Width+k];  //复制内容；
+            --j;
+        }
+        else if(line[i-1]==Blank)
+        {
+            for(;j>i-1;--j)
+            {
+                line[j]=Blank;
+                for(k=0;k<Width;++k)
+                    map[(j-1)*Width+k]=0;
+            }
+            return 1;
+        }
+        else ++score;
+    }
+}
+
+int move(int *c, int offset)    //通过改变x，y，t，改变map数组和line数组（位模式）
+{
+    int i,j;
+
+    fill_map(0);
+    *c += offset;
+    for(i=0;i<4;++i)
+    {
+        //检测位模式是否冲突；
+        if((3-x>0 ? shape[num][i]<<3-x : shape[num][i]>>x-3) & line[y+1+i])
+        {
+            *c -= offset;
+            if(c==&y)
+            {
+                //（固定）填充地图，①消行前必须填充；②初始化前必须填充；
+                fill_map(1);
+                for(j=0;j<4;++j)    //(固定)并入位模式
+                {
+                    line[y+1+j] |= (3-x>0 ? shape[num][j]<<3-x : shape[num][j]>>x-3) ;
+                }
+                //消行并检测是否上溢；
+                if(seek_copy()==0 && y==0 && x==0)
+                {
+                    gameover=0;
+                    return -1;
+                }
+                else
+                {
+                    initial_xyn();  //初始化x、y、t；
+                    fill_map(1);
+                    return 2;
+                }
+            }
+            fill_map(1);
+            return 0;
+        }
+        else continue;
+    }
+    fill_map(1);
+    return 1;
+}
+
+void show_map(char a[],int n)
+{
+    int i,j;
+    for (i=0;i<n;i++)
+    {
+        i%Width || printf("|");
+        printf(a[i] ? "[]":"..");
+        i%Width==Width-1 && printf("|\n");
+    }
+    printf("|");
+    for(j=0;j<Width;j++)
+    {
+        printf("##");
+    }
+    printf("|\n【得分】：%8d\n",score);
+}
+
+void excution(void)
+{
+    int wait;
+    for(wait=0;gameover;Sleep(100))
+    {
+        if(_kbhit())
+        {
+            switch(_getch() & 95)
+            {
+                case 'A': move(&x,-1);break;
+                case 'D': move(&x,1);break;
+                case 'S': move(&y,1);break;
+                case 'W': move(&num,num%4^3 ? 1 :-3);break;
+                case 0 :do move(&y,1);while(y);break;
+                case 27:gameover=0;
+            }
+        }
+        else if(++wait==10)
+        {
+            move(&y,1);
+        }
+        else continue;
+        wait=0;
+        system("cls");
+        show_map(map,Width*Height);
+    }
+}
+
+
+int main(void)
+{
+    system("color 0a");
+
+    initial_line(line,Height+2);
+
+    srand((unsigned)time(0));
+
+    initial_xyn();
+
+    fill_map(1);
+
+    show_map(map,Width*Height);
+
+    excution();
+
+    printf("【电脑】：“哈，你完蛋啦。”");
+
+    return 0;
+}
