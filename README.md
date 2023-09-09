@@ -6,20 +6,20 @@ C language games
 用到的函数
 
 <stdio.h>
-printf()
+printf();
 
 <stdlib.h>
-srand()
-rand()
-system()
+srand();
+rand();
+system();
 
 <time.h>
-time()
+time();
 
 <conin.h>
-_kbhit()
-_getch()
+_kbhit();
+_getch();
 
 <windows.h>
-Sleep()
+Sleep();
 
