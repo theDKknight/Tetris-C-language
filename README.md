@@ -1,4 +1,19 @@
 # Cgames
 C language games
 
-使用C语言编写的俄罗斯方块小游戏
+1.tetris（俄罗斯方块）
+用到的函数
+<stdio.h>
+printf()
+<stdlib.h>
+srand()
+rand()
+system()
+<time.h>
+time()
+<conin.h>
+_kbhit()
+_getch()
+<windows.h>
+Sleep()
+
