@@ -1,0 +1,227 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <conio.h>
+#include <windows.h>
+
+#define Width 8
+#define Height 16
+
+_Bool map[Width*Height]={0};
+unsigned short shap[28]={
+    0x048c,0x0123,0x048c,0x0123,  //I
+    0x0415,0x0415,0x0415,0x0415,  //O
+    0x4815,0x0156,0x4815,0x0156,  //S
+    0x0459,0x4152,0x0459,0x4152,  //Z
+    0x0159,0x0412,0x0489,0x4526,  //J
+    0x0481,0x0126,0x8159,0x0456,  //L
+    0x4159,0x0152,0x0485,0x4156   //T
+};
+int x=0,y=0;
+int num;
+_Bool gameover=1;
+unsigned int score=0;
+
+void init(void)
+{
+    x=0;
+    y=0;
+    num=rand()%28;
+}
+
+int line_count(int line)
+{
+    int count =0;
+    for(int i=0;i<Width;++i)
+    {
+        count+=map[line*Width-1-i];
+    }
+    return count;
+}
+
+int seek_copy(_Bool a[])
+{
+    int i,c,j;
+    for(i=Height;i>0;--i)
+    {
+        c=line_count(i);
+        if(c!=0 && c!=Width)
+        {
+            continue;
+        }
+        else if(c==0)
+        {
+            return 0;
+        }
+        else
+        {
+            ++score;
+            break;
+        }
+    }
+    if(i==0)
+    {
+        return 0;
+    }
+    else
+    {
+        for(j=i-1;j>0;--j)
+        {
+            c=line_count(j);
+            if(c!=0 && c!=Width)
+            {
+                for(int k=0;k<Width;++k)
+                {
+                    a[i*Width-1-k]=a[j*Width-1-k];
+                }
+                --i;
+            }
+            else if(c==0)
+            {
+                for(;i>j;--i)
+                {
+                    for(int k=0;k<Width;++k)
+                    {
+                        a[i*Width-1-k]=0;
+                    }
+                }
+                return 1;
+            }
+            else ++score;
+        }
+        if(j==0)
+        {
+            for(;i>j;--i)
+            {
+                for(int k=0;k<8;--k)
+                {
+                    a[i*Width-1-k]=0;
+                }
+            }
+        }
+        return 2;
+    }
+}
+
+void fill_map(_Bool a)
+{
+    int x1,y1;
+    for(int i=0;i<4;++i)
+    {
+        y1=shap[num]>>4*i & 3;
+        x1=shap[num]>>(4*i+2) & 3;
+        *(map+(y+y1)*Width +(x+x1)) = a;
+    }
+}
+
+void show_map(_Bool a[],int n)
+{
+    for(int i=0;i<n;++i)
+    {
+        i%Width || printf("|");
+        a[i] ? printf("[]") : printf("..");
+        i%Width==Width-1 && printf("|\n");
+    }
+    printf("|");
+    for(int j=0;j<Width;++j)
+    {
+        printf("##");
+    }
+    printf("|\n【得分】：%u\n",score);
+}
+
+int move(int *t,int offset)
+{
+    fill_map(0);
+    *t += offset;
+
+    int x1,y1;
+    int i;
+    for(i=0;i<4;++i)
+    {
+        y1=shap[num]>>4*i & 3;
+        x1=shap[num]>>(4*i+2) & 3;
+        if((x+x1)<0 || (x+x1)>7 || (y+y1)>15 || *(map+(y+y1)*Width +(x+x1))==1)
+        {
+            *t-=offset;
+            break;
+        }
+        else continue;
+    }
+    if(i<4 && t==&y)
+    {
+        fill_map(1);
+        if(seek_copy(map)==0 && y==0 && x==0)
+        {
+            gameover =0;
+            return -1;
+        }
+        else
+        {
+            init();
+            for(int j=0;j<4;++j)
+            {
+                y1=shap[num]>>4*j & 3;
+                x1=shap[num]>>(4*j+2) & 3;
+                if(*(map+(y+y1)*Width +(x+x1))==1)
+                {
+                    gameover=0;
+                    break;
+                }
+            }
+            fill_map(1);
+            return 0;
+        }
+    }
+    fill_map(1);
+    return 1;
+}
+
+void execute(void)
+{
+    int wait =0;
+    while(gameover)
+    {
+
+        if(_kbhit())
+        {
+            switch(_getch() & 95)
+            {
+            case 'A':move(&x,-1);break;
+            case 'D':move(&x,1);break;
+            case 'S':move(&y,1);break;
+            case 'W':num%4<3 ? move(&num,1) : move(&num,-3);break;
+            case 0: do move(&y,1);while(y);break;
+            case 27:gameover = 0;
+
+            }
+            system("cls");
+            show_map(map,Width*Height);
+            wait=0;
+        }
+        else if(wait==10)
+        {
+            move(&y,1);
+            system("cls");
+            show_map(map,Width*Height);
+            wait=0;
+        }
+        else
+            wait+=1;
+        Sleep(50);
+    }
+}
+
+int main(void)
+{
+    system("color 0a");
+
+    srand((unsigned)time(0));
+    init();
+    fill_map(1);
+    show_map(map,Width*Height);
+    execute();
+    printf("哈哈，你完蛋啦。。。\n");
+
+    return 0;
+}
