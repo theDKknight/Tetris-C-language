@@ -1,7 +1,6 @@
 # Tetris-C language
-#C language games
 
-#1.myTetris（俄罗斯方块）
+## 1.myTetris（俄罗斯方块）
 
 用到的函数
 
@@ -23,7 +22,7 @@ _getch();
 <windows.h>
 Sleep();
 
-#2.myTetris2（俄罗斯方块）
+## 2.myTetris2（俄罗斯方块）
 用到的函数
 
 <stdio.h>
